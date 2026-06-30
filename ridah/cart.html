@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Shopping Cart – Ridah</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/custom.css">
+</head>
+<body>
+<header id="site-header"></header>
+
+<div class="page-banner">
+  <p class="eyebrow">Review your selections</p>
+  <h1>Shopping Cart</h1>
+  <p class="breadcrumb"><a href="index.html">Home</a> › Cart</p>
+</div>
+
+<main>
+<div class="cart-layout">
+  <!-- Cart items -->
+  <div>
+    <div id="cart-items-wrap">
+      <div class="spinner"></div>
+    </div>
+  </div>
+
+  <!-- Order summary -->
+  <div>
+    <div class="order-summary-card">
+      <h3 style="font-family:var(--font-display);font-size:1.3rem;margin-bottom:1.25rem;">Order Summary</h3>
+      <div id="summary-rows">
+        <div class="summary-row"><span>Subtotal</span><span id="sum-subtotal">—</span></div>
+        <div class="summary-row"><span>Shipping</span><span id="sum-shipping">Calculated at checkout</span></div>
+        <div class="summary-row total"><span>Estimated Total</span><span id="sum-total">—</span></div>
+      </div>
+      <button class="btn btn-primary btn-full" id="checkout-btn" style="margin-top:1.25rem;"
+              onclick="proceedToCheckout()">
+        Proceed to Checkout
+      </button>
+      <a href="products.html" class="btn btn-outline btn-full" style="margin-top:.75rem;">Continue Shopping</a>
+
+      <div style="margin-top:1.5rem;padding-top:1.25rem;border-top:1px solid var(--ivory-dk);">
+        <p style="font-size:.78rem;color:var(--gray);text-align:center;">
+          🔒 Secure checkout · QR payment · Easy returns
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+</main>
+
+<footer id="site-footer"></footer>
+<script src="js/api.js"></script>
+<script src="js/main.js"></script>
+<script>
+// Cache of fetched product details: { productId: productData }
+const productCache = {};
+
+document.addEventListener('DOMContentLoaded', () => {
+  renderCart();
+});
+
+async function renderCart() {
+  const items = Cart.get();
+  const wrap  = document.getElementById('cart-items-wrap');
+
+  if (!items.length) {
+    wrap.innerHTML = `<div class="empty-state">
+      <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+      <p>Your cart is empty.</p>
+      <a href="products.html" class="btn btn-primary" style="margin-top:1rem;">Browse Collection</a>
+    </div>`;
+    updateSummary([], 0);
+    document.getElementById('checkout-btn').disabled = true;
+    return;
+  }
+
+  wrap.innerHTML = '<div class="spinner"></div>';
+
+  // Fetch product details for regular items
+  const enriched = await Promise.all(items.map(async item => {
+    if (item.customOrderId) return { ...item, name: item.name || 'Custom Rida', price: item.price || 0 };
+    if (item.name && item.price) return item; // already have meta from add()
+    try {
+      if (!productCache[item.productId]) {
+        productCache[item.productId] = await API.getProduct(item.productId);
+      }
+      const p = productCache[item.productId];
+      return { ...item, name: p.name, price: p.price, image: p.image || '' };
+    } catch {
+      return { ...item, name: 'Product', price: 0 };
+    }
+  }));
+
+  let subtotal = 0;
+  wrap.innerHTML = enriched.map(item => {
+    const lineTotal = (item.price || 0) * item.qty;
+    subtotal += lineTotal;
+    return `
+    <div class="cart-item" id="ci-${item._key}">
+      <div class="cart-item-img">
+        <img src="${item.image || 'images/placeholder.svg'}" alt="${item.name}" onerror="this.src='images/placeholder.svg'">
+      </div>
+      <div>
+        <p class="cart-item-name">${item.name}</p>
+        <p class="cart-item-meta">${item.size ? 'Size: ' + item.size : ''}${item.customOrderId ? 'Custom Order' : ''}</p>
+        <div class="qty-selector" style="margin-top:.5rem;">
+          <button class="qty-btn" onclick="updateQty('${item._key}', ${item.qty-1})">−</button>
+          <span class="qty-display">${item.qty}</span>
+          <button class="qty-btn" onclick="updateQty('${item._key}', ${item.qty+1})">+</button>
+        </div>
+        <p style="font-size:.85rem;color:var(--teal);font-weight:600;margin-top:.4rem;">${formatPrice(lineTotal)}</p>
+      </div>
+      <button onclick="removeItem('${item._key}')" title="Remove" style="color:var(--gray);font-size:1.1rem;align-self:flex-start;">✕</button>
+    </div>`;
+  }).join('');
+
+  updateSummary(enriched, subtotal);
+}
+
+function updateSummary(items, subtotal) {
+  document.getElementById('sum-subtotal').textContent = formatPrice(subtotal);
+  document.getElementById('sum-total').textContent    = formatPrice(subtotal); // shipping TBD at checkout
+}
+
+function updateQty(key, newQty) {
+  Cart.update(key, Math.max(0, newQty));
+  renderCart();
+}
+
+function removeItem(key) {
+  Cart.remove(key);
+  renderCart();
+}
+
+function proceedToCheckout() {
+  const items = Cart.get();
+  if (!items.length) return;
+  window.location.href = 'checkout.html';
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Account – Ridah</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/custom.css">
+</head>
+<body>
+<header id="site-header"></header>
+
+<div class="page-banner">
+  <p class="eyebrow">Your account</p>
+  <h1>My Profile</h1>
+  <p class="breadcrumb"><a href="index.html">Home</a> › Profile</p>
+</div>
+
+<main>
+<div class="profile-layout">
+  <!-- Sidebar -->
+  <aside>
+    <div class="profile-sidebar-card" id="profile-card">
+      <div class="spinner"></div>
+    </div>
+    <div style="margin-top:1rem;">
+      <button class="btn btn-danger btn-full" onclick="Auth.logout()">Sign Out</button>
+    </div>
+  </aside>
+
+  <!-- Main content -->
+  <div>
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('orders', this)">My Orders</button>
+      <button class="tab-btn" onclick="switchTab('edit', this)">Edit Profile</button>
+    </div>
+
+    <!-- Orders tab -->
+    <div class="tab-panel active" id="tab-orders">
+      <div id="orders-list"><div class="spinner"></div></div>
+    </div>
+
+    <!-- Edit profile tab -->
+    <div class="tab-panel" id="tab-edit">
+      <div class="form-card">
+        <h3 class="form-title">Edit Profile</h3>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Full Name</label>
+            <input type="text" id="edit-name" placeholder="Your name">
+          </div>
+          <div class="form-group">
+            <label>Phone / WhatsApp</label>
+            <input type="tel" id="edit-phone" placeholder="+91 99999 99999">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" id="edit-email" placeholder="email@example.com">
+        </div>
+        <div class="form-group">
+          <label>Default Shipping Address</label>
+          <textarea id="edit-address" rows="3" placeholder="House no, Street, City, State, PIN"></textarea>
+        </div>
+        <button class="btn btn-primary" id="save-btn" onclick="saveProfile()">Save Changes</button>
+      </div>
+    </div>
+  </div>
+</div>
+</main>
+
+<footer id="site-footer"></footer>
+<script src="js/api.js"></script>
+<script src="js/main.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+  if (!requireAuth()) return;
+  await loadProfile();
+  await loadOrders();
+});
+
+async function loadProfile() {
+  try {
+    const user = await API.getProfile();
+    Auth.setUser(user);
+    renderProfileCard(user);
+    prefillEdit(user);
+  } catch {
+    const cached = Auth.getUser();
+    if (cached) { renderProfileCard(cached); prefillEdit(cached); }
+    else         { document.getElementById('profile-card').innerHTML = '<p>Could not load profile.</p>'; }
+  }
+}
+
+function renderProfileCard(user) {
+  const initials = (user.name || 'U').split(' ').map(n => n[0]).slice(0,2).join('').toUpperCase();
+  document.getElementById('profile-card').innerHTML = `
+    <div class="avatar">${initials}</div>
+    <h3 style="font-family:var(--font-display);font-size:1.3rem;">${user.name || 'My Account'}</h3>
+    <p style="font-size:.82rem;color:var(--gray);margin-top:.3rem;">${user.email || ''}</p>
+    ${user.phone ? `<p style="font-size:.82rem;color:var(--gray);">${user.phone}</p>` : ''}
+    <div style="border-top:1px solid var(--ivory-dk);margin-top:1rem;padding-top:1rem;">
+      <p style="font-size:.78rem;font-weight:600;color:var(--gray);">MEMBER SINCE</p>
+      <p style="font-size:.85rem;">${user.createdAt ? new Date(user.createdAt).toLocaleDateString('en-IN',{year:'numeric',month:'long'}) : '—'}</p>
+    </div>`;
+}
+
+function prefillEdit(user) {
+  document.getElementById('edit-name').value    = user.name    || '';
+  document.getElementById('edit-email').value   = user.email   || '';
+  document.getElementById('edit-phone').value   = user.phone   || '';
+  document.getElementById('edit-address').value = user.address || '';
+}
+
+async function saveProfile() {
+  const btn = document.getElementById('save-btn');
+  btn.disabled = true;
+  btn.textContent = 'Saving…';
+  try {
+    const payload = {
+      name:    document.getElementById('edit-name').value.trim(),
+      email:   document.getElementById('edit-email').value.trim(),
+      phone:   document.getElementById('edit-phone').value.trim(),
+      address: document.getElementById('edit-address').value.trim(),
+    };
+    const res = await API.updateProfile(payload);
+    Auth.setUser(res || payload);
+    renderProfileCard(res || payload);
+    Toast.show('Profile updated', 'success');
+  } catch (err) {
+    Toast.show('Failed to save: ' + err.message, 'error');
+  }
+  btn.disabled = false;
+  btn.textContent = 'Save Changes';
+}
+
+async function loadOrders() {
+  const el = document.getElementById('orders-list');
+  try {
+    const orders = await API.getOrders();
+    renderOrders(orders?.orders || orders || []);
+  } catch {
+    renderOrders(getMockOrders());
+    Toast.show('Using demo order data', 'info');
+  }
+}
+
+function renderOrders(orders) {
+  const el = document.getElementById('orders-list');
+  if (!orders.length) {
+    el.innerHTML = `<div class="empty-state">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+      <p>No orders yet.</p>
+      <a href="products.html" class="btn btn-primary" style="margin-top:1rem;">Start Shopping</a>
+    </div>`;
+    return;
+  }
+
+  el.innerHTML = orders.map(o => {
+    const statusClass = {
+      delivered:'status-delivered',
+      processing:'status-processing',
+      shipped:'status-shipped',
+      cancelled:'status-cancelled',
+    }[o.status] || 'status-processing';
+    return `
+    <div class="order-row">
+      <div>
+        <p style="font-weight:600;font-size:.875rem;">#${o._id || o.id || o.orderId}</p>
+        <p style="font-size:.78rem;color:var(--gray);">${o.items?.length || 1} item(s) · ${o.createdAt ? new Date(o.createdAt).toLocaleDateString('en-IN') : '—'}</p>
+      </div>
+      <span class="order-status ${statusClass}">${o.status || 'Processing'}</span>
+      <div style="display:flex;gap:.5rem;">
+        ${o.status !== 'cancelled' ? `<a href="order-tracking.html?orderId=${o._id||o.id}" class="btn btn-outline btn-sm">Track</a>` : ''}
+        <a href="payment.html?orderId=${o._id||o.id}" class="btn btn-outline btn-sm">Invoice</a>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function switchTab(name, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(`tab-${name}`).classList.add('active');
+  btn.classList.add('active');
+}
+
+function getMockOrders() {
+  return [
+    { id:'ORD001', status:'delivered',  createdAt: new Date(Date.now()-8*864e5).toISOString(), items:[{},{}] },
+    { id:'ORD002', status:'shipped',    createdAt: new Date(Date.now()-2*864e5).toISOString(), items:[{}] },
+    { id:'ORD003', status:'processing', createdAt: new Date().toISOString(),                   items:[{},{},{}] },
+  ];
+}
+</script>
+</body>
+</html>

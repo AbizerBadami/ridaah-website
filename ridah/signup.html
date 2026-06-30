@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Join Ridah – Create Account</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/custom.css">
+</head>
+<body>
+<header id="site-header"></header>
+
+<main class="auth-page">
+  <div class="auth-card" style="max-width:500px;">
+    <div class="auth-logo">
+      <a href="index.html">
+        <div class="logo-text">Ridah</div>
+        <div class="logo-sub">رداء</div>
+      </a>
+    </div>
+
+    <h2 class="form-title" style="text-align:center;">Create your account</h2>
+
+    <div id="signup-error" class="error-state" style="display:none;margin-bottom:1rem;"></div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label for="first-name">First Name</label>
+        <input type="text" id="first-name" placeholder="Fatema" autocomplete="given-name">
+      </div>
+      <div class="form-group">
+        <label for="last-name">Last Name</label>
+        <input type="text" id="last-name" placeholder="Bohra" autocomplete="family-name">
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="email">Email Address</label>
+      <input type="email" id="email" placeholder="fatema@example.com" autocomplete="email">
+    </div>
+
+    <div class="form-group">
+      <label for="phone">WhatsApp / Phone Number</label>
+      <input type="tel" id="phone" placeholder="+91 99999 99999" autocomplete="tel">
+    </div>
+
+    <div class="form-group">
+      <label for="password">Password</label>
+      <div style="position:relative;">
+        <input type="password" id="password" placeholder="Minimum 8 characters" autocomplete="new-password">
+        <button type="button" onclick="togglePw('password','toggle1')" id="toggle1" style="position:absolute;right:.75rem;top:50%;transform:translateY(-50%);color:var(--gray);">👁</button>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="confirm-pw">Confirm Password</label>
+      <div style="position:relative;">
+        <input type="password" id="confirm-pw" placeholder="Re-enter password" autocomplete="new-password">
+        <button type="button" onclick="togglePw('confirm-pw','toggle2')" id="toggle2" style="position:absolute;right:.75rem;top:50%;transform:translateY(-50%);color:var(--gray);">👁</button>
+      </div>
+    </div>
+
+    <p style="font-size:.78rem;color:var(--gray);margin-bottom:1.25rem;">
+      By creating an account you agree to our <a href="#" style="color:var(--teal);">Terms of Service</a> and <a href="#" style="color:var(--teal);">Privacy Policy</a>.
+    </p>
+
+    <button class="btn btn-primary btn-full" id="signup-btn" onclick="doSignup()">Create Account</button>
+
+    <p class="form-footer" style="margin-top:1.25rem;">
+      Already have an account? <a href="login.html">Sign in</a>
+    </p>
+  </div>
+</main>
+
+<footer id="site-footer"></footer>
+<script src="js/api.js"></script>
+<script src="js/main.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  if (Auth.isLoggedIn()) window.location.href = 'index.html';
+});
+
+function togglePw(fieldId, btnId) {
+  const field = document.getElementById(fieldId);
+  const btn   = document.getElementById(btnId);
+  if (field.type === 'password') { field.type = 'text';     btn.textContent = '🙈'; }
+  else                           { field.type = 'password'; btn.textContent = '👁'; }
+}
+
+async function doSignup() {
+  const firstName = document.getElementById('first-name').value.trim();
+  const lastName  = document.getElementById('last-name').value.trim();
+  const email     = document.getElementById('email').value.trim();
+  const phone     = document.getElementById('phone').value.trim();
+  const pw        = document.getElementById('password').value;
+  const cpw       = document.getElementById('confirm-pw').value;
+  const errEl     = document.getElementById('signup-error');
+  const btn       = document.getElementById('signup-btn');
+
+  errEl.style.display = 'none';
+
+  if (!firstName || !email || !pw) {
+    showError2('Please fill in all required fields.');
+    return;
+  }
+  if (pw.length < 8) {
+    showError2('Password must be at least 8 characters.');
+    return;
+  }
+  if (pw !== cpw) {
+    showError2('Passwords do not match.');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Creating account…';
+
+  try {
+    const res = await API.register({
+      name: `${firstName} ${lastName}`.trim(),
+      email,
+      phone,
+      password: pw,
+    });
+    Auth.setToken(res.token || res.accessToken);
+    Auth.setUser(res.user || { name: `${firstName} ${lastName}` });
+    Toast.show('Account created! Welcome to Ridah 🎉', 'success');
+    setTimeout(() => window.location.href = 'index.html', 800);
+  } catch (err) {
+    showError2(err.message || 'Registration failed. Please try again.');
+    btn.disabled = false;
+    btn.textContent = 'Create Account';
+  }
+}
+
+function showError2(msg) {
+  const el = document.getElementById('signup-error');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+</script>
+</body>
+</html>

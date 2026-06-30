@@ -1,0 +1,9 @@
+/* 
+   custom.css 
+   Add your custom styles here to override or extend the default styles.
+*/
+
+/* Button Alignment Fixes (if necessary) */
+.btn {
+  text-align: center;
+}

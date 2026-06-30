@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign In – Ridah</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/custom.css">
+</head>
+<body>
+<header id="site-header"></header>
+
+<main class="auth-page">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <a href="index.html">
+        <div class="logo-text">Ridah</div>
+        <div class="logo-sub">رداء</div>
+      </a>
+    </div>
+
+    <h2 class="form-title" style="text-align:center;">Welcome back</h2>
+
+    <div id="login-error" style="display:none;" class="error-state" style="margin-bottom:1rem;"></div>
+
+    <div class="form-group">
+      <label for="email">Email or Phone</label>
+      <input type="text" id="email" placeholder="name@example.com" autocomplete="username">
+    </div>
+    <div class="form-group">
+      <label for="password">Password</label>
+      <div style="position:relative;">
+        <input type="password" id="password" placeholder="Enter your password" autocomplete="current-password">
+        <button type="button" onclick="togglePw()" style="position:absolute;right:.75rem;top:50%;transform:translateY(-50%);color:var(--gray);" id="pw-toggle">👁</button>
+      </div>
+    </div>
+
+    <div style="text-align:right;margin-bottom:1.25rem;">
+      <a href="#" style="font-size:.82rem;color:var(--teal);">Forgot password?</a>
+    </div>
+
+    <button class="btn btn-primary btn-full" id="login-btn" onclick="doLogin()">Sign In</button>
+
+    <p class="form-footer" style="margin-top:1.25rem;">
+      Don't have an account? <a href="signup.html">Join Ridah</a>
+    </p>
+  </div>
+</main>
+
+<footer id="site-footer"></footer>
+<script src="js/api.js"></script>
+<script src="js/main.js"></script>
+<script>
+// Redirect if already logged in
+document.addEventListener('DOMContentLoaded', () => {
+  if (Auth.isLoggedIn()) {
+    window.location.href = getParam('redirect') || 'index.html';
+  }
+  // Allow Enter key
+  document.getElementById('password').addEventListener('keydown', e => {
+    if (e.key === 'Enter') doLogin();
+  });
+});
+
+function togglePw() {
+  const pw = document.getElementById('password');
+  const btn = document.getElementById('pw-toggle');
+  if (pw.type === 'password') { pw.type = 'text'; btn.textContent = '🙈'; }
+  else { pw.type = 'password'; btn.textContent = '👁'; }
+}
+
+async function doLogin() {
+  const emailVal = document.getElementById('email').value.trim();
+  const pwVal    = document.getElementById('password').value;
+  const errEl    = document.getElementById('login-error');
+  const btn      = document.getElementById('login-btn');
+
+  errEl.style.display = 'none';
+  if (!emailVal || !pwVal) {
+    showLoginError('Please enter your email/phone and password.');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Signing in…';
+
+  try {
+    const res = await API.login({ email: emailVal, phone: emailVal, password: pwVal });
+    Auth.setToken(res.token || res.accessToken);
+    Auth.setUser(res.user || { name: emailVal });
+    Toast.show('Welcome back!', 'success');
+    setTimeout(() => {
+      window.location.href = getParam('redirect') || 'index.html';
+    }, 600);
+  } catch (err) {
+    showLoginError(err.message || 'Invalid credentials. Please try again.');
+    btn.disabled = false;
+    btn.textContent = 'Sign In';
+  }
+}
+
+function showLoginError(msg) {
+  const el = document.getElementById('login-error');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Payment – Ridah</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/custom.css">
+</head>
+<body>
+<header id="site-header"></header>
+
+<div class="page-banner">
+  <p class="eyebrow">Secure payment</p>
+  <h1>Complete Your Payment</h1>
+  <p class="breadcrumb"><a href="index.html">Home</a> › Payment</p>
+</div>
+
+<main style="padding: 3rem 1.5rem;">
+  <div style="max-width:var(--max-width);margin:0 auto;">
+    <div id="payment-wrap">
+      <div class="spinner"></div>
+    </div>
+  </div>
+</main>
+
+<footer id="site-footer"></footer>
+<script src="js/api.js"></script>
+<script src="js/main.js"></script>
+<script>
+let orderId   = null;
+let pollTimer = null;
+
+document.addEventListener('DOMContentLoaded', async () => {
+  orderId = getParam('orderId');
+  if (!orderId) {
+    document.getElementById('payment-wrap').innerHTML =
+      '<div class="error-state"><p>No order ID found. <a href="cart.html">Return to cart</a></p></div>';
+    return;
+  }
+  await loadPayment();
+});
+
+async function loadPayment() {
+  try {
+    const qrRes = await API.generateQR({ orderId });
+    renderPaymentUI(qrRes);
+  } catch {
+    // Demo fallback
+    renderPaymentUI({ qrCode: null, amount: 2800, currency: 'INR' });
+    Toast.show('Demo mode – using placeholder QR', 'info');
+  }
+  startPolling();
+}
+
+function renderPaymentUI(qrData) {
+  const wrap = document.getElementById('payment-wrap');
+  wrap.innerHTML = `
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:2rem;align-items:start;">
+    <!-- QR Box -->
+    <div>
+      <div class="qr-box">
+        <p class="eyebrow">Scan to pay</p>
+        <h2 style="font-size:1.4rem;margin:.25rem 0;">
+          ${qrData.currency ? qrData.currency + ' ' : '₹'}${(qrData.amount || 0).toLocaleString('en-IN')}
+        </h2>
+        <img id="qr-img"
+          src="${qrData.qrCode || 'images/qr-placeholder.svg'}"
+          alt="Payment QR Code"
+          onerror="this.src='images/qr-placeholder.svg'"
+          style="width:220px;height:220px;margin:1.25rem auto;border:4px solid var(--ivory-dk);border-radius:var(--radius-md);">
+        <p style="font-size:.8rem;color:var(--gray);">Scan with any UPI app (GPay, PhonePe, Paytm, BHIM)</p>
+
+        <div id="payment-status-badge" class="payment-status-badge status-pending" style="margin-top:1rem;display:inline-flex;">
+          <span id="status-dot" style="width:8px;height:8px;border-radius:50%;background:#856404;margin-right:.4rem;"></span>
+          <span id="status-text">Waiting for payment…</span>
+        </div>
+
+        <p style="font-size:.75rem;color:var(--gray);margin-top:.75rem;" id="poll-note">
+          Checking payment status every 5 seconds
+        </p>
+      </div>
+
+      <div style="margin-top:1rem;text-align:center;">
+        <p style="font-size:.8rem;color:var(--gray);">
+          Order ID: <strong>${orderId}</strong>
+        </p>
+        <p style="font-size:.78rem;color:var(--gray);margin-top:.4rem;">
+          Do not close this page until payment is confirmed.
+        </p>
+      </div>
+    </div>
+
+    <!-- Invoice / Order summary -->
+    <div>
+      <div class="form-card" id="invoice-section" style="display:none;">
+        <p class="eyebrow" style="color:var(--success);">✓ Payment Confirmed</p>
+        <h3 class="form-title">Invoice</h3>
+        <div id="invoice-content"><div class="spinner"></div></div>
+        <div style="display:flex;gap:.75rem;margin-top:1.5rem;flex-wrap:wrap;">
+          <button class="btn btn-primary" onclick="downloadInvoice()">Download Invoice</button>
+          <a href="order-tracking.html?orderId=${orderId}" class="btn btn-outline">Track Order →</a>
+        </div>
+      </div>
+
+      <div class="form-card" id="order-info-section">
+        <h3 class="form-title">Payment Instructions</h3>
+        <ol style="padding-left:1.25rem;font-size:.875rem;color:var(--gray);line-height:2;">
+          <li>Open your preferred UPI app (GPay, PhonePe, Paytm, BHIM)</li>
+          <li>Tap "Scan QR" or "Pay via QR"</li>
+          <li>Scan the QR code on the left</li>
+          <li>Confirm the amount and complete the payment</li>
+          <li>Wait for this page to confirm payment automatically</li>
+        </ol>
+        <div style="margin-top:1.25rem;padding-top:1rem;border-top:1px solid var(--ivory-dk);">
+          <p style="font-size:.8rem;font-weight:600;color:var(--charcoal);">Need help?</p>
+          <a href="chat.html" class="btn btn-outline btn-sm" style="margin-top:.5rem;">Contact Support</a>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function startPolling() {
+  pollTimer = setInterval(async () => {
+    try {
+      const status = await API.getOrderStatus(orderId);
+      const st = status?.status || status?.paymentStatus;
+      if (st === 'paid' || st === 'confirmed') {
+        clearInterval(pollTimer);
+        onPaymentConfirmed();
+      }
+    } catch {
+      // silent – keep polling
+    }
+  }, 5000);
+}
+
+async function onPaymentConfirmed() {
+  // Update UI
+  const badge    = document.getElementById('payment-status-badge');
+  const dot      = document.getElementById('status-dot');
+  const text     = document.getElementById('status-text');
+  const pollNote = document.getElementById('poll-note');
+
+  badge.className    = 'payment-status-badge status-paid';
+  dot.style.background = '#065F46';
+  text.textContent   = 'Payment confirmed!';
+  pollNote.textContent = '';
+
+  document.getElementById('invoice-section').style.display = 'block';
+  document.getElementById('order-info-section').style.display = 'none';
+
+  // Load invoice
+  try {
+    const inv = await API.getInvoice(orderId);
+    renderInvoice(inv);
+  } catch {
+    renderInvoice(getMockInvoice());
+  }
+}
+
+function renderInvoice(inv) {
+  const el = document.getElementById('invoice-content');
+  const rows = inv.items?.map(i => `
+    <div style="display:flex;justify-content:space-between;font-size:.82rem;padding:.3rem 0;border-bottom:1px solid var(--ivory-dk);">
+      <span>${i.name} × ${i.qty}</span>
+      <span>${formatPrice(i.total || i.price * i.qty)}</span>
+    </div>`).join('') || '';
+
+  el.innerHTML = `
+    <div style="font-size:.82rem;color:var(--gray);margin-bottom:.75rem;">
+      <span>Invoice #${inv.invoiceNumber || orderId}</span> ·
+      <span>${inv.date ? new Date(inv.date).toLocaleDateString('en-IN') : new Date().toLocaleDateString('en-IN')}</span>
+    </div>
+    ${rows}
+    <div style="display:flex;justify-content:space-between;font-weight:600;margin-top:.75rem;padding-top:.5rem;border-top:2px solid var(--charcoal);font-size:.9rem;">
+      <span>Total Paid</span>
+      <span style="color:var(--teal);">${formatPrice(inv.total || 0)}</span>
+    </div>
+    ${inv.pdfUrl ? `<p style="font-size:.75rem;color:var(--gray);margin-top:.5rem;" id="pdf-link" data-url="${inv.pdfUrl}">PDF ready to download</p>` : ''}`;
+}
+
+function downloadInvoice() {
+  const link = document.querySelector('#pdf-link');
+  if (link?.dataset?.url) {
+    const a = document.createElement('a');
+    a.href = link.dataset.url;
+    a.download = `ridah-invoice-${orderId}.pdf`;
+    a.click();
+  } else {
+    // Print fallback
+    window.print();
+  }
+}
+
+function getMockInvoice() {
+  return {
+    invoiceNumber: 'INV-' + orderId,
+    date: new Date().toISOString(),
+    items: [
+      { name: 'Ivory Georgette Rida', qty: 1, price: 2800, total: 2800 },
+    ],
+    total: 2800,
+  };
+}
+
+// Cleanup on page leave
+window.addEventListener('beforeunload', () => clearInterval(pollTimer));
+</script>
+</body>
+</html>

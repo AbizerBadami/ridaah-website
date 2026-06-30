@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ridah – Traditional Dawoodi Bohra Attire</title>
+  <meta name="description" content="Discover exquisite handcrafted Ridah for the Dawoodi Bohra woman. Shop ready-to-wear or design your own custom Rida.">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/custom.css">
+</head>
+<body>
+
+<header id="site-header"></header>
+
+<main>
+  <!-- Hero -->
+  <section style="background: linear-gradient(135deg,var(--ivory) 55%,var(--rose-lt) 100%);">
+    <div class="hero">
+      <div class="hero-content">
+        <p class="hero-eyebrow">Handcrafted with devotion</p>
+        <h1>Where tradition meets <em>graceful elegance</em></h1>
+        <p>Exquisite Ridah for the Dawoodi Bohra woman — ready-to-wear collections and bespoke creations tailored to your measurements.</p>
+        <div class="hero-cta">
+          <a href="products.html" class="btn btn-primary">Shop Collection</a>
+          <a href="custom-rida.html" class="btn btn-outline">Design Your Rida</a>
+        </div>
+      </div>
+      <div class="hero-image">
+        <div class="hero-image-placeholder">◈</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Category pills -->
+  <div class="categories-strip">
+    <a href="products.html?category=new" class="cat-pill">✦ New Arrivals</a>
+    <a href="products.html?category=festive" class="cat-pill">Festive</a>
+    <a href="products.html?category=daily" class="cat-pill">Daily Wear</a>
+    <a href="products.html?category=bridal" class="cat-pill">Bridal</a>
+    <a href="products.html?category=cotton" class="cat-pill">Cotton</a>
+    <a href="products.html?category=silk" class="cat-pill">Silk</a>
+    <a href="custom-rida.html" class="cat-pill">Custom</a>
+  </div>
+
+  <!-- Featured products -->
+  <section class="section" style="background:var(--ivory);">
+    <div class="section-inner">
+      <div class="section-header">
+        <p class="eyebrow">Curated for you</p>
+        <h2>Featured Collection</h2>
+        <p>Meticulously crafted pieces that blend devotion and artistry</p>
+      </div>
+      <div class="product-grid" id="featured-grid">
+        <div class="spinner"></div>
+      </div>
+      <div style="text-align:center; margin-top:2.5rem;">
+        <a href="products.html" class="btn btn-outline">View All Products</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Trust badges -->
+  <div style="background:var(--ivory-dk); border-top:1px solid var(--gray-lt); border-bottom:1px solid var(--gray-lt);">
+    <div class="trust-strip">
+      <div class="trust-item">
+        <div class="trust-icon">🧵</div>
+        <h4>Premium Fabrics</h4>
+        <p>Finest georgette, crepe & cotton</p>
+      </div>
+      <div class="trust-item">
+        <div class="trust-icon">📐</div>
+        <h4>Custom Tailoring</h4>
+        <p>Perfect fit, made to your measurements</p>
+      </div>
+      <div class="trust-item">
+        <div class="trust-icon">🚚</div>
+        <h4>Pan-India Delivery</h4>
+        <p>Tracked shipping to your door</p>
+      </div>
+      <div class="trust-item">
+        <div class="trust-icon">💬</div>
+        <h4>Dedicated Support</h4>
+        <p>WhatsApp & live chat assistance</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Custom Rida CTA -->
+  <section class="section" style="background: linear-gradient(135deg, var(--teal) 0%, var(--teal-lt) 100%); color:var(--white);">
+    <div class="section-inner" style="text-align:center;">
+      <p class="eyebrow" style="color:var(--gold-lt);">Exclusively yours</p>
+      <h2 style="color:var(--white); margin-bottom:1rem;">Design Your Dream Rida</h2>
+      <p style="color:rgba(255,255,255,.75); max-width:500px; margin:0 auto 2rem;">
+        Choose your fabric, colour, and measurements. Our artisans will craft a one-of-a-kind Rida just for you.
+      </p>
+      <a href="custom-rida.html" class="btn btn-gold">Start Customising</a>
+    </div>
+  </section>
+
+  <!-- Testimonials -->
+  <section class="section" style="background:var(--ivory);">
+    <div class="section-inner">
+      <div class="section-header">
+        <p class="eyebrow">From our community</p>
+        <h2>What Our Customers Say</h2>
+      </div>
+      <div class="testimonials-grid">
+        <div class="testimonial-card">
+          <div class="testimonial-stars">★★★★★</div>
+          <p class="testimonial-text">"The quality of the fabric is exceptional and the stitching is immaculate. My custom Rida fits like it was made by angels."</p>
+          <p class="testimonial-author">— User 1</p>
+        </div>
+        <div class="testimonial-card">
+          <div class="testimonial-stars">★★★★★</div>
+          <p class="testimonial-text">"Ordered for Eid and the delivery was prompt. The colour was exactly as shown. Will definitely order again, inshallah."</p>
+          <p class="testimonial-author">— User 2</p>
+        </div>
+        <div class="testimonial-card">
+          <div class="testimonial-stars">★★★★☆</div>
+          <p class="testimonial-text">"Beautiful craftsmanship. The custom builder made it easy to specify exactly what I wanted. Highly recommended!"</p>
+          <p class="testimonial-author">— User 3</p>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer id="site-footer"></footer>
+
+<script src="js/api.js"></script>
+<script src="js/main.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+  try {
+    const data = await API.getProducts({ featured: true, limit: 8 });
+    renderFeatured(data?.products || data || []);
+  } catch (err) {
+    renderFeatured(getMockProducts());
+  }
+});
+
+function renderFeatured(products) {
+  const grid = document.getElementById('featured-grid');
+  if (!products.length) {
+    grid.innerHTML = '<p class="empty-state">No featured products right now.</p>';
+    return;
+  }
+  grid.innerHTML = products.map(p => `
+    <div class="product-card">
+      <div class="product-card-img">
+        ${p.isNew ? '<span class="product-badge">New</span>' : ''}
+        <img src="${p.image || 'images/placeholder.svg'}" alt="${p.name}" loading="lazy"
+          onerror="this.src='images/placeholder.svg'">
+      </div>
+      <div class="product-card-body">
+        <h3 class="product-card-name">${p.name}</h3>
+        <p class="product-card-price">${formatPrice(p.price)}</p>
+        <div style="display:flex;gap:.5rem;">
+          <a href="product-detail.html?id=${p._id || p.id}" class="btn btn-outline btn-sm" style="flex:1">View</a>
+          <button class="btn btn-primary btn-sm" style="flex:1"
+            onclick="Cart.add('${p._id || p.id}',1,null,null,{name:'${p.name.replace(/'/g,"\\'")}',price:${p.price},image:'${p.image || ''}'})">
+            Add
+          </button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// Mock fallback data
+function getMockProducts() {
+  return [
+    { id:'1', name:'Ivory Georgette Rida', price:2800, image:'', isNew:true },
+    { id:'2', name:'Rose Crepe Rida',      price:3200, image:'' },
+    { id:'3', name:'Teal Silk Rida',       price:4500, image:'', isNew:true },
+    { id:'4', name:'Gold Brocade Rida',    price:5800, image:'' },
+  ];
+}
+</script>
+</body>
+</html>

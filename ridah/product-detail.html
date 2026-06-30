@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Product – Ridah</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/custom.css">
+</head>
+<body>
+<header id="site-header"></header>
+
+<main>
+  <div id="product-wrap">
+    <div class="spinner"></div>
+  </div>
+</main>
+
+<footer id="site-footer"></footer>
+<script src="js/api.js"></script>
+<script src="js/main.js"></script>
+<script>
+let selectedSize = null;
+let qty = 1;
+let product = null;
+
+document.addEventListener('DOMContentLoaded', async () => {
+  const id = getParam('id');
+  if (!id) { document.getElementById('product-wrap').innerHTML = '<div class="error-state"><p>No product specified.</p></div>'; return; }
+  await loadProduct(id);
+});
+
+async function loadProduct(id) {
+  try {
+    product = await API.getProduct(id);
+    if (!product) throw new Error('Not found');
+    renderProduct(product);
+  } catch (err) {
+    // fallback mock
+    product = getMockProduct(id);
+    renderProduct(product);
+    Toast.show('Using demo data', 'info');
+  }
+}
+
+function renderProduct(p) {
+  const images = p.images?.length ? p.images : [p.image || 'images/placeholder.svg'];
+  document.title = `${p.name} – Ridah`;
+
+  document.getElementById('product-wrap').innerHTML = `
+    <div style="background:var(--ivory-dk); padding:1rem 1.5rem;">
+      <div style="max-width:var(--max-width);margin:0 auto;font-size:.8rem;color:var(--gray);">
+        <a href="index.html" style="color:var(--teal)">Home</a> ›
+        <a href="products.html" style="color:var(--teal)">Shop</a> ›
+        ${p.name}
+      </div>
+    </div>
+
+    <div class="product-detail-layout">
+      <!-- Gallery -->
+      <div class="product-gallery">
+        <div class="product-gallery-main" id="main-img-wrap">
+          <img src="${images[0]}" id="main-img" alt="${p.name}" onerror="this.src='images/placeholder.svg'">
+        </div>
+        ${images.length > 1 ? `
+        <div class="product-gallery-thumbs" id="thumbs">
+          ${images.map((img, i) => `
+            <div class="gallery-thumb ${i===0?'active':''}" onclick="switchImg(${i})">
+              <img src="${img}" alt="${p.name} view ${i+1}" onerror="this.src='images/placeholder.svg'">
+            </div>
+          `).join('')}
+        </div>` : ''}
+      </div>
+
+      <!-- Info -->
+      <div class="product-info">
+        ${p.category ? `<p class="eyebrow">${p.category}</p>` : ''}
+        <h1>${p.name}</h1>
+        <p class="product-price">${formatPrice(p.price)}</p>
+
+        ${p.description ? `<p style="margin-bottom:1.5rem;">${p.description}</p>` : ''}
+
+        <!-- Sizes -->
+        ${p.sizes?.length ? `
+        <div style="margin-bottom:1.5rem;">
+          <p style="font-size:.85rem;font-weight:600;margin-bottom:.6rem;color:var(--charcoal);">Select Size</p>
+          <div class="size-options" id="size-options">
+            ${p.sizes.map(s => `
+              <button class="size-btn" onclick="selectSize('${s}', this)">${s}</button>
+            `).join('')}
+          </div>
+        </div>` : ''}
+
+        <!-- Colour -->
+        ${p.colour ? `<p style="font-size:.85rem;color:var(--gray);margin-bottom:1rem;">Colour: <strong style="color:var(--charcoal)">${p.colour}</strong></p>` : ''}
+
+        <!-- Fabric -->
+        ${p.fabric ? `<p style="font-size:.85rem;color:var(--gray);margin-bottom:1.5rem;">Fabric: <strong style="color:var(--charcoal)">${p.fabric}</strong></p>` : ''}
+
+        <!-- Quantity -->
+        <div class="qty-selector" style="margin-bottom:1.5rem;">
+          <span style="font-size:.85rem;font-weight:600;margin-right:.5rem;color:var(--charcoal);">Qty</span>
+          <button class="qty-btn" onclick="changeQty(-1)">−</button>
+          <span class="qty-display" id="qty-display">1</span>
+          <button class="qty-btn" onclick="changeQty(1)">+</button>
+        </div>
+
+        <!-- Actions -->
+        <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:1.5rem;">
+          <button class="btn btn-primary" style="flex:1;min-width:180px;" onclick="addToCart()">Add to Cart</button>
+          <a href="cart.html" class="btn btn-outline" style="flex:1;min-width:180px;">View Cart</a>
+        </div>
+
+        ${p.isBaseDesign ? `
+        <div style="background:rgba(44,110,106,.08);border:1.5px solid var(--teal);border-radius:var(--radius-md);padding:1rem;margin-bottom:1rem;">
+          <p style="color:var(--teal);font-weight:600;font-size:.875rem;">🎨 This is a base design</p>
+          <p style="font-size:.82rem;margin-top:.3rem;">Use it as a starting point to create your fully custom Rida.</p>
+          <a href="custom-rida.html?baseId=${p._id || p.id}" class="btn btn-outline btn-sm" style="margin-top:.75rem;">Customise This Design</a>
+        </div>` : ''}
+
+        <!-- Details accordion -->
+        <div style="border-top:1px solid var(--ivory-dk);padding-top:1.25rem;margin-top:.5rem;">
+          ${p.care ? `
+          <details style="margin-bottom:.75rem;">
+            <summary style="font-weight:600;cursor:pointer;font-size:.875rem;padding:.4rem 0;">Care Instructions</summary>
+            <p style="font-size:.82rem;padding:.5rem 0;">${p.care}</p>
+          </details>` : ''}
+          ${p.stitching ? `
+          <details style="margin-bottom:.75rem;">
+            <summary style="font-weight:600;cursor:pointer;font-size:.875rem;padding:.4rem 0;">Stitching Details</summary>
+            <p style="font-size:.82rem;padding:.5rem 0;">${p.stitching}</p>
+          </details>` : ''}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function switchImg(i) {
+  const mainImg = document.getElementById('main-img');
+  const thumbs  = document.querySelectorAll('.gallery-thumb');
+  const images  = product?.images?.length ? product.images : [product?.image || ''];
+  mainImg.src   = images[i] || 'images/placeholder.svg';
+  thumbs.forEach((t, idx) => t.classList.toggle('active', idx === i));
+}
+
+function selectSize(size, btn) {
+  selectedSize = size;
+  document.querySelectorAll('.size-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+}
+
+function changeQty(delta) {
+  qty = Math.max(1, qty + delta);
+  document.getElementById('qty-display').textContent = qty;
+}
+
+function addToCart() {
+  if (product?.sizes?.length && !selectedSize) {
+    Toast.show('Please select a size', 'error');
+    return;
+  }
+  Cart.add(
+    product._id || product.id,
+    qty,
+    selectedSize,
+    null,
+    { name: product.name, price: product.price, image: product.image || '' }
+  );
+}
+
+function getMockProduct(id) {
+  return {
+    id,
+    name: 'Ivory Georgette Rida',
+    price: 2800,
+    category: 'Daily Wear',
+    fabric: 'Premium Georgette',
+    colour: 'Ivory White',
+    description: 'A timeless ivory georgette Rida with delicate lace trim and full-length sleeves. Lightweight and breathable, perfect for daily wear. The nida fabric lining ensures complete coverage and comfort.',
+    sizes: ['Small', 'Medium', 'Large', 'XL', 'XXL'],
+    images: ['images/placeholder.svg'],
+    care: 'Dry clean recommended. Store in a muslin bag away from direct sunlight.',
+    isBaseDesign: true,
+  };
+}
+</script>
+</body>
+</html>

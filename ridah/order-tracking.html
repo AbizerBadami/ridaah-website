@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Track Order – Ridah</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/custom.css">
+</head>
+<body>
+<header id="site-header"></header>
+
+<div class="page-banner">
+  <p class="eyebrow">Delivery status</p>
+  <h1>Track Your Order</h1>
+  <p class="breadcrumb"><a href="index.html">Home</a> › <a href="profile.html">My Orders</a> › Track</p>
+</div>
+
+<main style="padding:2.5rem 1.5rem;">
+  <div style="max-width:760px;margin:0 auto;">
+    <!-- Order ID search -->
+    <div class="form-card" style="margin-bottom:1.5rem;">
+      <div style="display:flex;gap:.75rem;">
+        <input type="text" id="order-input" placeholder="Enter Order ID (e.g. ORD001)" style="flex:1;">
+        <button class="btn btn-primary" onclick="fetchTracking()">Track</button>
+      </div>
+    </div>
+
+    <div id="tracking-wrap"></div>
+  </div>
+</main>
+
+<footer id="site-footer"></footer>
+<script src="js/api.js"></script>
+<script src="js/main.js"></script>
+<script>
+let pollTimer = null;
+
+const STATUSES = [
+  { key:'placed',      label:'Order Placed',          icon:'📦' },
+  { key:'confirmed',   label:'Order Confirmed',        icon:'✅' },
+  { key:'processing',  label:'Being Prepared',         icon:'🧵' },
+  { key:'shipped',     label:'Shipped',                icon:'🚚' },
+  { key:'out_for_delivery', label:'Out for Delivery',  icon:'📍' },
+  { key:'delivered',   label:'Delivered',              icon:'🏠' },
+];
+
+document.addEventListener('DOMContentLoaded', () => {
+  const id = getParam('orderId');
+  if (id) {
+    document.getElementById('order-input').value = id;
+    fetchTracking();
+  }
+});
+
+async function fetchTracking() {
+  clearInterval(pollTimer);
+  const id = document.getElementById('order-input').value.trim();
+  if (!id) { Toast.show('Please enter an Order ID', 'error'); return; }
+
+  const wrap = document.getElementById('tracking-wrap');
+  wrap.innerHTML = '<div class="spinner"></div>';
+
+  try {
+    const data = await API.getOrderTracking(id);
+    renderTracking(id, data);
+  } catch {
+    renderTracking(id, getMockTracking());
+    Toast.show('Demo tracking data shown', 'info');
+  }
+
+  // Poll every 30 seconds
+  pollTimer = setInterval(async () => {
+    try {
+      const data = await API.getOrderTracking(id);
+      renderTracking(id, data);
+      if (data.currentStatus === 'delivered') clearInterval(pollTimer);
+    } catch {}
+  }, 30000);
+}
+
+function renderTracking(orderId, data) {
+  const wrap = document.getElementById('tracking-wrap');
+  const currentIdx = STATUSES.findIndex(s => s.key === data.currentStatus);
+
+  wrap.innerHTML = `
+    <div class="form-card" style="margin-bottom:1.5rem;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:1rem;margin-bottom:1.5rem;">
+        <div>
+          <p class="eyebrow">Order ID</p>
+          <h3 style="font-family:var(--font-display);font-size:1.5rem;">#${orderId}</h3>
+        </div>
+        ${data.estimatedDelivery ? `
+        <div style="text-align:right;">
+          <p class="eyebrow">Estimated Delivery</p>
+          <p style="font-weight:600;color:var(--charcoal);">${new Date(data.estimatedDelivery).toLocaleDateString('en-IN',{weekday:'short',day:'numeric',month:'short'})}</p>
+        </div>` : ''}
+      </div>
+
+      <!-- Progress bar -->
+      <div style="position:relative;margin-bottom:2rem;">
+        <div style="height:4px;background:var(--gray-lt);border-radius:2px;position:relative;overflow:hidden;">
+          <div style="height:100%;background:var(--teal);border-radius:2px;width:${currentIdx >= 0 ? Math.min(100, ((currentIdx+1)/STATUSES.length)*100) : 0}%;transition:width .5s ease;"></div>
+        </div>
+      </div>
+
+      <!-- Timeline -->
+      <ul class="tracking-timeline">
+        ${STATUSES.map((s, i) => {
+          const isDone    = i < currentIdx;
+          const isCurrent = i === currentIdx;
+          const update    = data.updates?.find(u => u.status === s.key);
+          return `
+          <li class="timeline-item ${isDone?'done':''} ${isCurrent?'current':''}">
+            <p class="timeline-item-title">${s.icon} ${s.label}</p>
+            ${update ? `<p class="timeline-item-sub">${new Date(update.timestamp).toLocaleString('en-IN',{dateStyle:'medium',timeStyle:'short'})}${update.note ? ' · ' + update.note : ''}</p>` : ''}
+            ${isCurrent && !update ? `<p class="timeline-item-sub" style="color:var(--gold);">In progress…</p>` : ''}
+          </li>`;
+        }).join('')}
+      </ul>
+    </div>
+
+    ${data.courier ? `
+    <div class="form-card">
+      <h4 style="font-family:var(--font-display);margin-bottom:1rem;">Courier Information</h4>
+      <div style="font-size:.875rem;display:flex;flex-direction:column;gap:.4rem;">
+        <div style="display:flex;justify-content:space-between;">
+          <span style="color:var(--gray);">Courier</span>
+          <span style="font-weight:500;">${data.courier.name || '—'}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;">
+          <span style="color:var(--gray);">Tracking Number</span>
+          <span style="font-weight:500;font-family:monospace;">${data.courier.trackingNumber || '—'}</span>
+        </div>
+        ${data.courier.trackingUrl ? `
+        <div style="margin-top:.75rem;">
+          <a href="${data.courier.trackingUrl}" target="_blank" class="btn btn-outline btn-sm">
+            Track on Courier Website →
+          </a>
+        </div>` : ''}
+      </div>
+    </div>` : ''}`;
+}
+
+function getMockTracking() {
+  return {
+    currentStatus: 'shipped',
+    estimatedDelivery: new Date(Date.now() + 2 * 86400000).toISOString(),
+    updates: [
+      { status:'placed',    timestamp: new Date(Date.now() - 4*86400000).toISOString(), note:'Order received' },
+      { status:'confirmed', timestamp: new Date(Date.now() - 3*86400000).toISOString(), note:'Payment verified' },
+      { status:'processing',timestamp: new Date(Date.now() - 2*86400000).toISOString(), note:'Being stitched and packed' },
+      { status:'shipped',   timestamp: new Date(Date.now() - 1*86400000).toISOString(), note:'Dispatched from Mumbai warehouse' },
+    ],
+    courier: {
+      name: 'DTDC Courier',
+      trackingNumber: 'DTDC123456789',
+      trackingUrl: 'https://www.dtdc.in/tracking/',
+    }
+  };
+}
+
+window.addEventListener('beforeunload', () => clearInterval(pollTimer));
+</script>
+</body>
+</html>

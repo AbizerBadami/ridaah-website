@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Support – Ridah</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/custom.css">
+</head>
+<body>
+<header id="site-header"></header>
+
+<div class="page-banner">
+  <p class="eyebrow">We're here for you</p>
+  <h1>Contact Support</h1>
+  <p class="breadcrumb"><a href="index.html">Home</a> › Support</p>
+</div>
+
+<main style="padding:2.5rem 1.5rem;">
+  <div style="max-width:900px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:2rem;align-items:start;">
+
+    <!-- WhatsApp -->
+    <div class="form-card" style="text-align:center;">
+      <div style="font-size:3rem;margin-bottom:1rem;">💬</div>
+      <h3 class="form-title">WhatsApp Chat</h3>
+      <p style="margin-bottom:1.5rem;font-size:.9rem;">Chat directly with our team on WhatsApp. Typical response time: under 30 minutes.</p>
+      <a id="wa-link" href="#" target="_blank" class="whatsapp-btn">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.125.557 4.126 1.533 5.862L0 24l6.335-1.61A11.945 11.945 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.885 0-3.64-.49-5.17-1.348l-.371-.219-3.762.957.997-3.672-.24-.384A9.955 9.955 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
+        Chat on WhatsApp
+      </a>
+      <p style="font-size:.75rem;color:var(--gray);margin-top:1rem;">Available 9 AM – 8 PM IST, Mon–Sat</p>
+    </div>
+
+    <!-- Live Chat -->
+    <div class="form-card">
+      <h3 class="form-title">Live Chat</h3>
+      <p style="font-size:.875rem;margin-bottom:1rem;">Send us a message and we'll reply as soon as possible.</p>
+
+      <div class="chat-messages" id="chat-messages">
+        <div class="msg msg-in">
+          <p>Salaam! Welcome to Ridah support. How can we help you today?</p>
+          <p class="msg-time">Just now</p>
+        </div>
+      </div>
+
+      <div class="chat-input-row">
+        <input type="text" id="chat-input" placeholder="Type a message…" onkeydown="if(event.key==='Enter')sendMsg()">
+        <button class="btn btn-primary" onclick="sendMsg()">Send</button>
+      </div>
+
+      <p id="chat-typing" style="font-size:.75rem;color:var(--gray);margin-top:.5rem;min-height:1em;"></p>
+    </div>
+  </div>
+
+  <!-- FAQ -->
+  <div style="max-width:900px;margin:2rem auto 0;">
+    <div class="form-card">
+      <h3 class="form-title">Frequently Asked Questions</h3>
+      <div id="faqs">
+        <details style="border-bottom:1px solid var(--ivory-dk);padding:.75rem 0;">
+          <summary style="font-weight:600;cursor:pointer;font-size:.9rem;">How long does a custom Rida take?</summary>
+          <p style="font-size:.85rem;padding:.5rem 0;">Custom orders typically take 10–14 working days from confirmation, depending on fabric availability and complexity.</p>
+        </details>
+        <details style="border-bottom:1px solid var(--ivory-dk);padding:.75rem 0;">
+          <summary style="font-weight:600;cursor:pointer;font-size:.9rem;">Can I return or exchange a product?</summary>
+          <p style="font-size:.85rem;padding:.5rem 0;">Ready-to-wear items can be exchanged within 7 days of delivery. Custom orders are non-returnable as they are made to your measurements.</p>
+        </details>
+        <details style="border-bottom:1px solid var(--ivory-dk);padding:.75rem 0;">
+          <summary style="font-weight:600;cursor:pointer;font-size:.9rem;">What payment methods do you accept?</summary>
+          <p style="font-size:.85rem;padding:.5rem 0;">We accept UPI payments via QR code (GPay, PhonePe, Paytm, BHIM). Bank transfer is available for orders above ₹5,000.</p>
+        </details>
+        <details style="padding:.75rem 0;">
+          <summary style="font-weight:600;cursor:pointer;font-size:.9rem;">Do you ship outside India?</summary>
+          <p style="font-size:.85rem;padding:.5rem 0;">Yes! We ship worldwide. International shipping charges and timelines vary by destination. Contact us on WhatsApp for a quote.</p>
+        </details>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer id="site-footer"></footer>
+<script src="js/api.js"></script>
+<script src="js/main.js"></script>
+<script>
+let sessionId = localStorage.getItem('ridah_chat_session') || ('sess_' + Date.now());
+localStorage.setItem('ridah_chat_session', sessionId);
+
+document.addEventListener('DOMContentLoaded', () => {
+  // Set WhatsApp link
+  document.getElementById('wa-link').href =
+    `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent('Salaam! I need help with my Ridah order.')}`;
+
+  // Pre-fill user info if logged in
+  const user = Auth.getUser();
+  if (user) {
+    appendMsg(`You are chatting as ${user.name || user.email}`, 'system');
+  }
+
+  // Load chat history
+  loadHistory();
+});
+
+async function loadHistory() {
+  try {
+    const history = await API.getChatHistory(sessionId);
+    const msgs = history?.messages || [];
+    msgs.forEach(m => appendMsg(m.text, m.sender === 'user' ? 'out' : 'in', m.timestamp));
+  } catch {
+    // No history yet, that's fine
+  }
+}
+
+async function sendMsg() {
+  const input = document.getElementById('chat-input');
+  const text  = input.value.trim();
+  if (!text) return;
+
+  input.value = '';
+  appendMsg(text, 'out');
+
+  const typing = document.getElementById('chat-typing');
+  typing.textContent = 'Support team is typing…';
+
+  const user = Auth.getUser();
+  const payload = {
+    sessionId,
+    message: text,
+    ...(user && { name: user.name, email: user.email }),
+  };
+
+  try {
+    const res = await API.sendMessage(payload);
+    typing.textContent = '';
+    if (res?.reply) appendMsg(res.reply, 'in');
+    else            appendMsg('Thank you for your message. Our team will respond shortly.', 'in');
+  } catch {
+    typing.textContent = '';
+    appendMsg('Message sent. We'll get back to you via WhatsApp or email shortly.', 'in');
+  }
+}
+
+function appendMsg(text, type = 'in', timestamp = null) {
+  const el = document.getElementById('chat-messages');
+  if (type === 'system') {
+    el.innerHTML += `<p style="text-align:center;font-size:.73rem;color:var(--gray);padding:.25rem 0;">${text}</p>`;
+  } else {
+    const time = timestamp ? new Date(timestamp).toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit' }) : 'Just now';
+    el.innerHTML += `
+      <div class="msg msg-${type}">
+        <p>${text}</p>
+        <p class="msg-time">${time}</p>
+      </div>`;
+  }
+  el.scrollTop = el.scrollHeight;
+}
+</script>
+</body>
+</html>

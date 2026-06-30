@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Custom Rida Builder – Ridah</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/custom.css">
+</head>
+<body>
+<header id="site-header"></header>
+
+<div class="page-banner">
+  <p class="eyebrow">Bespoke creation</p>
+  <h1>Design Your Rida</h1>
+  <p class="breadcrumb"><a href="index.html">Home</a> › Custom Rida</p>
+</div>
+
+<main>
+<div class="custom-builder">
+  <!-- Stepper -->
+  <div class="stepper" id="stepper">
+    <div class="step active" id="step-ind-1"><div class="step-circle">1</div><span class="step-label">Fabric</span></div>
+    <div class="step-connector"></div>
+    <div class="step" id="step-ind-2"><div class="step-circle">2</div><span class="step-label">Colour</span></div>
+    <div class="step-connector"></div>
+    <div class="step" id="step-ind-3"><div class="step-circle">3</div><span class="step-label">Measurements</span></div>
+    <div class="step-connector"></div>
+    <div class="step" id="step-ind-4"><div class="step-circle">4</div><span class="step-label">Preview & Order</span></div>
+  </div>
+
+  <!-- Step panels -->
+  <div id="step-1" class="step-panel">
+    <div class="form-card">
+      <h3 class="form-title">Step 1 — Choose Your Fabric</h3>
+      <p style="margin-bottom:1.5rem;font-size:.875rem;">Select the fabric type for your Rida.</p>
+      <div class="fabric-grid" id="fabric-grid"><div class="spinner"></div></div>
+      <div style="display:flex;justify-content:flex-end;margin-top:1.5rem;">
+        <button class="btn btn-primary" onclick="goStep(2)">Next: Choose Colour →</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="step-2" class="step-panel" style="display:none">
+    <div class="form-card">
+      <h3 class="form-title">Step 2 — Select Colour</h3>
+      <p style="margin-bottom:1.5rem;font-size:.875rem;">Pick a colour for your fabric.</p>
+      <div class="color-grid" id="color-grid"><div class="spinner"></div></div>
+      <div id="color-label" style="margin-top:.75rem;font-size:.875rem;color:var(--gray);min-height:1.2em;"></div>
+      <!-- Reference image upload -->
+      <div class="form-group" style="margin-top:1.5rem;">
+        <label>Reference Image (optional)</label>
+        <input type="file" accept="image/*" id="ref-image" onchange="previewRef(event)">
+        <img id="ref-preview" src="" alt="" style="display:none;max-height:160px;border-radius:var(--radius-sm);margin-top:.5rem;">
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-top:1.5rem;">
+        <button class="btn btn-outline" onclick="goStep(1)">← Back</button>
+        <button class="btn btn-primary" onclick="goStep(3)">Next: Measurements →</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="step-3" class="step-panel" style="display:none">
+    <div class="form-card">
+      <h3 class="form-title">Step 3 — Your Measurements</h3>
+      <p style="margin-bottom:1.5rem;font-size:.875rem;">All measurements in centimetres (cm).</p>
+      <div class="measurements-grid">
+        <div class="form-group">
+          <label>Bust / Chest (cm)</label>
+          <input type="number" id="m-bust" placeholder="e.g. 90">
+        </div>
+        <div class="form-group">
+          <label>Waist (cm)</label>
+          <input type="number" id="m-waist" placeholder="e.g. 75">
+        </div>
+        <div class="form-group">
+          <label>Hip (cm)</label>
+          <input type="number" id="m-hip" placeholder="e.g. 95">
+        </div>
+        <div class="form-group">
+          <label>Total Length (cm)</label>
+          <input type="number" id="m-length" placeholder="e.g. 140">
+        </div>
+        <div class="form-group">
+          <label>Sleeve Length (cm)</label>
+          <input type="number" id="m-sleeve" placeholder="e.g. 58">
+        </div>
+        <div class="form-group">
+          <label>Shoulder Width (cm)</label>
+          <input type="number" id="m-shoulder" placeholder="e.g. 40">
+        </div>
+        <div class="form-group" style="grid-column:1/-1">
+          <label>Special Instructions</label>
+          <textarea id="m-notes" rows="3" placeholder="e.g. Wider sleeves, lace on hem, extra padding at shoulders…"></textarea>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-top:1.5rem;">
+        <button class="btn btn-outline" onclick="goStep(2)">← Back</button>
+        <button class="btn btn-primary" onclick="goStep(4)">Next: Preview →</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="step-4" class="step-panel" style="display:none">
+    <div class="form-card">
+      <h3 class="form-title">Step 4 — Preview &amp; Confirm</h3>
+      <div id="order-preview" style="background:var(--ivory-dk);border-radius:var(--radius-md);padding:1.5rem;margin-bottom:1.5rem;font-size:.875rem;">
+        <!-- Populated by JS -->
+      </div>
+      <p style="font-size:.8rem;color:var(--gray);margin-bottom:1.5rem;">
+        ✦ Custom orders take 10–14 working days. You will be contacted for confirmation before production begins.
+      </p>
+      <div style="display:flex;justify-content:space-between;">
+        <button class="btn btn-outline" onclick="goStep(3)">← Back</button>
+        <button class="btn btn-gold" id="submit-btn" onclick="submitOrder()">Place Custom Order</button>
+      </div>
+    </div>
+  </div>
+</div>
+</main>
+
+<footer id="site-footer"></footer>
+<script src="js/api.js"></script>
+<script src="js/main.js"></script>
+<script>
+let currentStep = 1;
+let selectedFabric = null;
+let selectedColor  = null;
+let refImageBase64 = null;
+
+const STEPS = 4;
+
+document.addEventListener('DOMContentLoaded', async () => {
+  loadFabrics();
+  loadColors();
+  // Pre-fill base design if any
+  const baseId = getParam('baseId');
+  if (baseId) Toast.show('Customising base design ' + baseId, 'info');
+});
+
+async function loadFabrics() {
+  const grid = document.getElementById('fabric-grid');
+  try {
+    const fabrics = await API.getFabrics();
+    renderFabrics(fabrics);
+  } catch {
+    renderFabrics(getMockFabrics());
+  }
+}
+
+function renderFabrics(fabrics) {
+  document.getElementById('fabric-grid').innerHTML = fabrics.map(f => `
+    <div class="fabric-card" onclick="selectFabric('${f.id || f._id}', '${f.name}', this)">
+      <div class="fabric-card-swatch" style="background:${f.swatchColor || '#e0ddd8'}"></div>
+      <p class="fabric-card-name">${f.name}</p>
+      ${f.priceModifier ? `<p style="font-size:.7rem;color:var(--teal);">+${formatPrice(f.priceModifier)}</p>` : ''}
+    </div>
+  `).join('');
+}
+
+function selectFabric(id, name, el) {
+  selectedFabric = { id, name };
+  document.querySelectorAll('.fabric-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+async function loadColors() {
+  try {
+    const colors = await API.getColors();
+    renderColors(colors);
+  } catch {
+    renderColors(getMockColors());
+  }
+}
+
+function renderColors(colors) {
+  document.getElementById('color-grid').innerHTML = colors.map(c => `
+    <div class="color-dot" style="background:${c.hex}"
+      title="${c.name}"
+      onclick="selectColor('${c.id || c._id}', '${c.name}', '${c.hex}', this)">
+    </div>
+  `).join('');
+}
+
+function selectColor(id, name, hex, el) {
+  selectedColor = { id, name, hex };
+  document.querySelectorAll('.color-dot').forEach(d => d.classList.remove('selected'));
+  el.classList.add('selected');
+  document.getElementById('color-label').textContent = `Selected: ${name}`;
+}
+
+function previewRef(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    refImageBase64 = ev.target.result;
+    const prev = document.getElementById('ref-preview');
+    prev.src = ev.target.result;
+    prev.style.display = 'block';
+  };
+  reader.readAsDataURL(file);
+}
+
+function goStep(n) {
+  // Validate before advancing
+  if (n > 1 && !selectedFabric) { Toast.show('Please select a fabric', 'error'); return; }
+  if (n > 2 && !selectedColor)  { Toast.show('Please select a colour', 'error'); return; }
+  if (n > 3) {
+    const bust = document.getElementById('m-bust').value;
+    if (!bust) { Toast.show('Please enter at least your bust measurement', 'error'); return; }
+  }
+
+  // Hide all panels
+  for (let i = 1; i <= STEPS; i++) {
+    document.getElementById(`step-${i}`).style.display = 'none';
+    const ind = document.getElementById(`step-ind-${i}`);
+    ind.classList.remove('active', 'done');
+    if (i < n) ind.classList.add('done');
+  }
+  document.getElementById(`step-${n}`).style.display = 'block';
+  document.getElementById(`step-ind-${n}`).classList.add('active');
+  currentStep = n;
+
+  if (n === 4) buildPreview();
+}
+
+function buildPreview() {
+  const rows = [
+    ['Fabric',        selectedFabric?.name || '—'],
+    ['Colour',        selectedColor  ? `<span style="display:inline-block;width:14px;height:14px;border-radius:50%;background:${selectedColor.hex};vertical-align:middle;margin-right:.3rem;"></span>${selectedColor.name}` : '—'],
+    ['Bust',          (document.getElementById('m-bust').value    || '—') + ' cm'],
+    ['Waist',         (document.getElementById('m-waist').value   || '—') + ' cm'],
+    ['Hip',           (document.getElementById('m-hip').value     || '—') + ' cm'],
+    ['Length',        (document.getElementById('m-length').value  || '—') + ' cm'],
+    ['Sleeve',        (document.getElementById('m-sleeve').value  || '—') + ' cm'],
+    ['Shoulder',      (document.getElementById('m-shoulder').value|| '—') + ' cm'],
+    ['Notes',         document.getElementById('m-notes').value    || '—'],
+  ];
+  document.getElementById('order-preview').innerHTML = rows.map(([k,v]) => `
+    <div style="display:flex;justify-content:space-between;padding:.4rem 0;border-bottom:1px solid var(--gray-lt);">
+      <span style="color:var(--gray);font-weight:500;">${k}</span>
+      <span>${v}</span>
+    </div>
+  `).join('') + (refImageBase64 ? `<div style="margin-top:.75rem;"><img src="${refImageBase64}" style="max-height:100px;border-radius:var(--radius-sm);" alt="Reference"></div>` : '');
+}
+
+async function submitOrder() {
+  if (!requireAuth()) return;
+
+  const btn = document.getElementById('submit-btn');
+  btn.disabled = true;
+  btn.textContent = 'Placing order…';
+
+  const payload = {
+    fabricId:  selectedFabric?.id,
+    colorId:   selectedColor?.id,
+    referenceImage: refImageBase64 || null,
+    measurements: {
+      bust:     parseFloat(document.getElementById('m-bust').value)     || null,
+      waist:    parseFloat(document.getElementById('m-waist').value)    || null,
+      hip:      parseFloat(document.getElementById('m-hip').value)      || null,
+      length:   parseFloat(document.getElementById('m-length').value)   || null,
+      sleeve:   parseFloat(document.getElementById('m-sleeve').value)   || null,
+      shoulder: parseFloat(document.getElementById('m-shoulder').value) || null,
+    },
+    notes: document.getElementById('m-notes').value,
+  };
+
+  try {
+    const res = await API.placeCustomOrder(payload);
+    const orderId = res?.orderId || res?._id || 'demo-001';
+    Cart.add(null, 1, null, orderId, { name: 'Custom Rida', price: res?.price || 0, image: '' });
+    Toast.show('Custom order placed! Redirecting…', 'success');
+    setTimeout(() => window.location.href = `cart.html`, 1500);
+  } catch (err) {
+    Toast.show('Failed to place order: ' + err.message, 'error');
+    btn.disabled = false;
+    btn.textContent = 'Place Custom Order';
+  }
+}
+
+// Mock data
+function getMockFabrics() {
+  return [
+    { id:'f1', name:'Georgette',  swatchColor:'#E8E0D5' },
+    { id:'f2', name:'Crepe',      swatchColor:'#D4C5B0' },
+    { id:'f3', name:'Silk',       swatchColor:'#C9B99A' },
+    { id:'f4', name:'Cotton',     swatchColor:'#EDE8E1' },
+    { id:'f5', name:'Nidha',      swatchColor:'#F0EBE3' },
+    { id:'f6', name:'Brocade',    swatchColor:'#B8960C', priceModifier:1200 },
+  ];
+}
+function getMockColors() {
+  return [
+    { id:'c1', name:'Ivory White',  hex:'#FAF7F2' },
+    { id:'c2', name:'Dusty Rose',   hex:'#C9919A' },
+    { id:'c3', name:'Deep Teal',    hex:'#2C6E6A' },
+    { id:'c4', name:'Midnight Blue',hex:'#1B2A4A' },
+    { id:'c5', name:'Forest Green', hex:'#2D5A27' },
+    { id:'c6', name:'Burgundy',     hex:'#6B1A1A' },
+    { id:'c7', name:'Gold',         hex:'#B8960C' },
+    { id:'c8', name:'Lilac',        hex:'#8B7BA8' },
+    { id:'c9', name:'Charcoal',     hex:'#2B2B2B' },
+    { id:'c10',name:'Nude Beige',   hex:'#C8A882' },
+  ];
+}
+</script>
+</body>
+</html>

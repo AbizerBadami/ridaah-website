@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Shop – Ridah</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/custom.css">
+</head>
+<body>
+<header id="site-header"></header>
+
+<div class="page-banner">
+  <p class="eyebrow">Our Collection</p>
+  <h1>Shop All Ridah</h1>
+  <p class="breadcrumb"><a href="index.html">Home</a> › Shop</p>
+</div>
+
+<main>
+  <div class="shop-layout">
+    <!-- Filter sidebar -->
+    <aside class="filter-sidebar">
+      <div class="filter-card">
+        <h3 style="margin-bottom:1rem;">Filters</h3>
+
+        <div class="filter-section">
+          <h4>Category</h4>
+          <label class="filter-option"><input type="radio" name="cat" value=""> All</label>
+          <label class="filter-option"><input type="radio" name="cat" value="festive"> Festive</label>
+          <label class="filter-option"><input type="radio" name="cat" value="daily"> Daily Wear</label>
+          <label class="filter-option"><input type="radio" name="cat" value="bridal"> Bridal</label>
+          <label class="filter-option"><input type="radio" name="cat" value="new"> New Arrivals</label>
+        </div>
+
+        <div class="filter-section">
+          <h4>Fabric</h4>
+          <label class="filter-option"><input type="checkbox" value="georgette"> Georgette</label>
+          <label class="filter-option"><input type="checkbox" value="crepe"> Crepe</label>
+          <label class="filter-option"><input type="checkbox" value="silk"> Silk</label>
+          <label class="filter-option"><input type="checkbox" value="cotton"> Cotton</label>
+          <label class="filter-option"><input type="checkbox" value="nidha"> Nidha</label>
+        </div>
+
+        <div class="filter-section">
+          <h4>Price Range (₹)</h4>
+          <div class="price-range">
+            <input type="number" id="price-min" placeholder="Min" min="0">
+            <input type="number" id="price-max" placeholder="Max" min="0">
+          </div>
+        </div>
+
+        <button class="btn btn-primary btn-full" id="apply-filters" style="margin-top:.75rem;">
+          Apply Filters
+        </button>
+        <button class="btn btn-outline btn-full" id="clear-filters" style="margin-top:.5rem;">
+          Clear All
+        </button>
+      </div>
+    </aside>
+
+    <!-- Product listing -->
+    <div>
+      <!-- Search + sort bar -->
+      <div style="display:flex;gap:1rem;align-items:center;margin-bottom:1.5rem;flex-wrap:wrap;">
+        <input type="search" id="search-input" placeholder="Search for a design, colour, fabric…"
+               style="max-width:360px; flex:1">
+        <select id="sort-select" style="width:auto;min-width:160px;">
+          <option value="newest">Newest First</option>
+          <option value="price_asc">Price: Low to High</option>
+          <option value="price_desc">Price: High to Low</option>
+          <option value="popular">Most Popular</option>
+        </select>
+        <span id="result-count" style="font-size:.85rem;color:var(--gray);white-space:nowrap;"></span>
+      </div>
+
+      <div class="product-grid" id="product-grid">
+        <div class="spinner"></div>
+      </div>
+
+      <!-- Pagination -->
+      <div id="pagination" style="display:flex;justify-content:center;gap:.5rem;margin-top:2.5rem;flex-wrap:wrap;"></div>
+    </div>
+  </div>
+</main>
+
+<footer id="site-footer"></footer>
+<script src="js/api.js"></script>
+<script src="js/main.js"></script>
+<script>
+let currentPage = 1;
+const PAGE_SIZE = 12;
+let currentParams = {};
+
+// Pre-fill category from URL
+document.addEventListener('DOMContentLoaded', () => {
+  const cat = getParam('category');
+  if (cat) {
+    const radio = document.querySelector(`input[name="cat"][value="${cat}"]`);
+    if (radio) radio.checked = true;
+  }
+  loadProducts();
+
+  document.getElementById('apply-filters').addEventListener('click', () => { currentPage = 1; loadProducts(); });
+  document.getElementById('clear-filters').addEventListener('click', clearFilters);
+  document.getElementById('sort-select').addEventListener('change', () => { currentPage = 1; loadProducts(); });
+
+  let searchTimer;
+  document.getElementById('search-input').addEventListener('input', e => {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(() => { currentPage = 1; loadProducts(); }, 400);
+  });
+});
+
+async function loadProducts() {
+  const grid = document.getElementById('product-grid');
+  grid.innerHTML = '<div class="spinner"></div>';
+
+  const cat     = document.querySelector('input[name="cat"]:checked')?.value || '';
+  const fabrics = [...document.querySelectorAll('input[type=checkbox]:checked')].map(i => i.value);
+  const minP    = document.getElementById('price-min').value;
+  const maxP    = document.getElementById('price-max').value;
+  const sort    = document.getElementById('sort-select').value;
+  const search  = document.getElementById('search-input').value.trim();
+
+  const params = {
+    page: currentPage,
+    limit: PAGE_SIZE,
+    ...(cat     && { category: cat }),
+    ...(fabrics.length && { fabric: fabrics.join(',') }),
+    ...(minP    && { price_min: minP }),
+    ...(maxP    && { price_max: maxP }),
+    ...(sort    && { sort }),
+    ...(search  && { q: search }),
+  };
+  currentParams = params;
+
+  try {
+    const data = await API.getProducts(params);
+    const products = data?.products || data?.data || data || [];
+    const total    = data?.total || products.length;
+    renderProducts(products, total);
+    renderPagination(total);
+  } catch (err) {
+    renderProducts(getMockProducts(), 4);
+    renderPagination(4);
+    Toast.show('Using demo data – API unreachable', 'info');
+  }
+}
+
+function renderProducts(products, total) {
+  const grid = document.getElementById('product-grid');
+  document.getElementById('result-count').textContent = `${total} product${total !== 1 ? 's' : ''}`;
+
+  if (!products.length) {
+    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <p>No products match your filters.</p>
+      <button class="btn btn-outline" onclick="clearFilters()" style="margin-top:1rem;">Clear Filters</button>
+    </div>`;
+    return;
+  }
+
+  grid.innerHTML = products.map(p => `
+    <div class="product-card">
+      <div class="product-card-img">
+        ${p.isNew ? '<span class="product-badge">New</span>' : ''}
+        <img src="${p.image || 'images/placeholder.svg'}" alt="${p.name}" loading="lazy"
+             onerror="this.src='images/placeholder.svg'">
+      </div>
+      <div class="product-card-body">
+        <h3 class="product-card-name">${p.name}</h3>
+        ${p.fabric ? `<p style="font-size:.78rem;color:var(--gray);margin-bottom:.3rem;">${p.fabric}</p>` : ''}
+        <p class="product-card-price">${formatPrice(p.price)}</p>
+        <div style="display:flex;gap:.5rem;">
+          <a href="product-detail.html?id=${p._id || p.id}" class="btn btn-outline btn-sm" style="flex:1">View</a>
+          <button class="btn btn-primary btn-sm" style="flex:1"
+            onclick="Cart.add('${p._id || p.id}',1,null,null,{name:${JSON.stringify(p.name)},price:${p.price},image:'${p.image || ''}'})">
+            Add
+          </button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderPagination(total) {
+  const pages = Math.ceil(total / PAGE_SIZE);
+  const pg = document.getElementById('pagination');
+  if (pages <= 1) { pg.innerHTML = ''; return; }
+
+  let html = '';
+  if (currentPage > 1) html += `<button class="btn btn-outline btn-sm" onclick="goPage(${currentPage-1})">← Prev</button>`;
+  for (let i = 1; i <= pages; i++) {
+    html += `<button class="btn ${i===currentPage?'btn-primary':'btn-outline'} btn-sm" onclick="goPage(${i})">${i}</button>`;
+  }
+  if (currentPage < pages) html += `<button class="btn btn-outline btn-sm" onclick="goPage(${currentPage+1})">Next →</button>`;
+  pg.innerHTML = html;
+}
+
+function goPage(p) { currentPage = p; loadProducts(); window.scrollTo(0,0); }
+
+function clearFilters() {
+  document.querySelectorAll('input[name="cat"]')[0].checked = true;
+  document.querySelectorAll('input[type=checkbox]').forEach(i => i.checked = false);
+  document.getElementById('price-min').value = '';
+  document.getElementById('price-max').value = '';
+  document.getElementById('search-input').value = '';
+  document.getElementById('sort-select').value = 'newest';
+  currentPage = 1;
+  loadProducts();
+}
+
+function getMockProducts() {
+  return [
+    { id:'1', name:'Ivory Georgette Rida',  price:2800, fabric:'Georgette', image:'' },
+    { id:'2', name:'Rose Crepe Rida',        price:3200, fabric:'Crepe',     image:'', isNew:true },
+    { id:'3', name:'Teal Silk Rida',         price:4500, fabric:'Silk',      image:'' },
+    { id:'4', name:'Gold Brocade Rida',      price:5800, fabric:'Brocade',   image:'', isNew:true },
+  ];
+}
+</script>
+</body>
+</html>
